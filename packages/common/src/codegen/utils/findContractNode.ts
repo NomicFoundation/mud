@@ -1,16 +1,18 @@
-import { visit } from "@solidity-parser/parser";
-import type { ContractDefinition, SourceUnit } from "@solidity-parser/parser/dist/src/ast-types";
+import { Cursor, Query } from "@nomicfoundation/slang/cst";
 
-export function findContractNode(ast: SourceUnit, contractName: string): ContractDefinition | undefined {
-  let contract: ContractDefinition | undefined = undefined;
-
-  visit(ast, {
-    ContractDefinition(node) {
-      if (node.name === contractName) {
-        contract = node;
-      }
-    },
-  });
-
-  return contract;
+export function findContractOrInterfaceNode(root: Cursor, contractName: string): Cursor | undefined {
+  for (const result of root.query([
+    Query.create(`
+      @contract [ContractDefinition
+        name: ["${contractName}"]
+      ]
+    `),
+    Query.create(`
+      @contract [InterfaceDefinition
+        name: ["${contractName}"]
+      ]
+    `),
+  ])) {
+    return result.captures.contract?.[0];
+  }
 }
